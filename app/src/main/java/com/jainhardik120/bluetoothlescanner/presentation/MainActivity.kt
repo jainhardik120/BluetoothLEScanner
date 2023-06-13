@@ -1,4 +1,4 @@
-package com.jainhardik120.bluetoothlescanner
+package com.jainhardik120.bluetoothlescanner.presentation
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
@@ -9,31 +9,24 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.jainhardik120.bluetoothlescanner.Screen
+import com.jainhardik120.bluetoothlescanner.presentation.device.DeviceScreen
+import com.jainhardik120.bluetoothlescanner.presentation.home.HomeScreen
 import com.jainhardik120.bluetoothlescanner.ui.theme.BluetoothLEScannerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
 
     private val bluetoothManager by lazy {
         applicationContext.getSystemService(BluetoothManager::class.java)
@@ -80,34 +73,27 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             BluetoothLEScannerTheme {
-
                 Surface(
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
-                    val viewModel: DevicesViewModel = hiltViewModel()
-                    val state by viewModel.state.collectAsState()
-                    Column(Modifier.fillMaxSize()) {
-
-                        LazyColumn(
-                            Modifier
-                                .fillMaxWidth()
-                                .weight(1f), content = {
-                            itemsIndexed(state.scannedDevices) { index, device ->
-                                Text(
-                                    text = device.address ?: "null",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
-                                )
+                    val navController = rememberNavController()
+                    NavHost(
+                        navController = navController,
+                        route = "root_graph",
+                        startDestination = Screen.HomeScreen.route
+                    ) {
+                        composable(Screen.HomeScreen.route) {
+                            HomeScreen(onNavigate = {
+                                navController.navigate(Screen.DeviceScreen.withArgs(it))
+                            })
+                        }
+                        composable(Screen.DeviceScreen.route + "/{deviceAddress}", arguments = listOf(
+                            navArgument("deviceAddress"){
+                                type = NavType.StringType
+                                nullable = false
                             }
-                        })
-                        Row(Modifier.fillMaxWidth()) {
-                            Button(onClick = { viewModel.startScan() }) {
-                                Text(text = "Start Scan")
-                            }
-                            Button(onClick = { viewModel.stopScan() }) {
-                                Text(text = "Stop Scan")
-                            }
+                        )) {
+                            DeviceScreen(viewModel = hiltViewModel())
                         }
                     }
                 }

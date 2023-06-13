@@ -1,15 +1,19 @@
-package com.jainhardik120.bluetoothlescanner
+package com.jainhardik120.bluetoothlescanner.data
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
+import com.jainhardik120.bluetoothlescanner.domain.BluetoothController
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +24,8 @@ import kotlinx.coroutines.flow.update
 class BLEController(private val context: Context) : BluetoothController {
 
     private val TAG = "BLEController"
+
+    private var bluetoothGatt: BluetoothGatt? = null
 
     private val bluetoothManager by lazy {
         context.getSystemService(BluetoothManager::class.java)
@@ -41,11 +47,14 @@ class BLEController(private val context: Context) : BluetoothController {
     override val scannedDevices: StateFlow<List<BluetoothDevice>>
         get() = _scannedDevices.asStateFlow()
 
+    private val _gattServices = MutableStateFlow<List<BluetoothGattService>>(emptyList())
+    override val gattServices: StateFlow<List<BluetoothGattService>>
+        get() = _gattServices.asStateFlow()
+
     private fun handleResult(result : ScanResult?){
         if(result==null){
             return;
         }
-        Log.d(TAG, "logResult: ${result.device.address}")
         val device = result.device
         _scannedDevices.update {devices->
             if(device in devices) devices else{
@@ -74,6 +83,28 @@ class BLEController(private val context: Context) : BluetoothController {
         }
     }
 
+    private val bluetoothGattCallback = object : BluetoothGattCallback(){
+        override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+            super.onConnectionStateChange(gatt, status, newState)
+            bluetoothGatt = gatt
+            if(newState== BluetoothProfile.STATE_CONNECTED){
+
+                bluetoothGatt?.discoverServices()
+            }else if(newState== BluetoothProfile.STATE_DISCONNECTED){
+
+            }
+        }
+
+        override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+            super.onServicesDiscovered(gatt, status)
+            if(status== BluetoothGatt.GATT_SUCCESS){
+                _gattServices.update {it
+                    bluetoothGatt?.services ?: it
+                }
+            }
+        }
+    }
+
 
     override fun startDiscovery() {
         if(!hasPermission(Manifest.permission.BLUETOOTH_SCAN)){
@@ -91,5 +122,18 @@ class BLEController(private val context: Context) : BluetoothController {
 
     override fun release() {
 
+    }
+
+    override fun connectGattDevice(address: String) : Boolean{
+        bluetoothAdapter?.let { adapter ->
+            try {
+                val device = adapter.getRemoteDevice(address)
+                device.connectGatt(context, false, bluetoothGattCallback)
+                return true;
+            } catch (exception: Exception) {
+                Log.w(TAG, "Device not found with provided address.")
+                return false
+            }
+        }?:return false
     }
 }

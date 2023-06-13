@@ -1,6 +1,8 @@
-package com.jainhardik120.bluetoothlescanner
+package com.jainhardik120.bluetoothlescanner.di
 
 import android.content.Context
+import com.jainhardik120.bluetoothlescanner.domain.BluetoothController
+import com.jainhardik120.bluetoothlescanner.data.BLEController
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,7 +16,7 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
-    fun provideBluetoothController(@ApplicationContext context: Context):BluetoothController{
+    fun provideBluetoothController(@ApplicationContext context: Context): BluetoothController {
         return BLEController(context)
     }
 }

@@ -1,8 +1,9 @@
-package com.jainhardik120.bluetoothlescanner
+package com.jainhardik120.bluetoothlescanner.presentation.home
 
 import android.bluetooth.BluetoothDevice
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jainhardik120.bluetoothlescanner.domain.BluetoothController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -11,9 +12,11 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
-class DevicesViewModel @Inject constructor(
+class HomeViewModel @Inject constructor(
     private val bluetoothController: BluetoothController
 )  : ViewModel() {
+
+
     private val _state = MutableStateFlow(DevicesState())
     val state = combine(
         bluetoothController.scannedDevices,

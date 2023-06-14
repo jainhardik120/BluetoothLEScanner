@@ -16,7 +16,6 @@ class HomeViewModel @Inject constructor(
     private val bluetoothController: BluetoothController
 )  : ViewModel() {
 
-
     private val _state = MutableStateFlow(DevicesState())
     val state = combine(
         bluetoothController.scannedDevices,
@@ -27,6 +26,9 @@ class HomeViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
+    init{
+        startScan()
+    }
 
     fun startScan() {
         bluetoothController.startDiscovery()

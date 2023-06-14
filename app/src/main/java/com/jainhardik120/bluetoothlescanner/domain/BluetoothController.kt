@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface BluetoothController {
 
     val scannedDevices: StateFlow<List<BluetoothDevice>>
-    val gattServices :StateFlow<List<BluetoothGattService>>
+    val gattServices :StateFlow<List<MBluetoothGattService>>
 
     fun startDiscovery()
     fun stopDiscovery()

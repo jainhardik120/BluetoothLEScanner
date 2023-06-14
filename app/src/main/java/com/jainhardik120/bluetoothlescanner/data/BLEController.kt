@@ -14,6 +14,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
 import com.jainhardik120.bluetoothlescanner.domain.BluetoothController
+import com.jainhardik120.bluetoothlescanner.domain.MBluetoothGattService
+import com.jainhardik120.bluetoothlescanner.domain.toMBluetoothGattService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,8 +49,8 @@ class BLEController(private val context: Context) : BluetoothController {
     override val scannedDevices: StateFlow<List<BluetoothDevice>>
         get() = _scannedDevices.asStateFlow()
 
-    private val _gattServices = MutableStateFlow<List<BluetoothGattService>>(emptyList())
-    override val gattServices: StateFlow<List<BluetoothGattService>>
+    private val _gattServices = MutableStateFlow<List<MBluetoothGattService>>(emptyList())
+    override val gattServices: StateFlow<List<MBluetoothGattService>>
         get() = _gattServices.asStateFlow()
 
     private fun handleResult(result : ScanResult?){
@@ -98,8 +100,10 @@ class BLEController(private val context: Context) : BluetoothController {
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             super.onServicesDiscovered(gatt, status)
             if(status== BluetoothGatt.GATT_SUCCESS){
-                _gattServices.update {it
-                    bluetoothGatt?.services ?: it
+                _gattServices.update { services ->
+                    bluetoothGatt?.services?.map {
+                        it.toMBluetoothGattService()
+                    } ?: services
                 }
             }
         }

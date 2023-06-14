@@ -1,5 +1,7 @@
 package com.jainhardik120.bluetoothlescanner.presentation.home
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -10,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -20,24 +24,23 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import javax.inject.Inject
 
 @Composable
-fun HomeScreen (viewModel: HomeViewModel = hiltViewModel(), onNavigate: (deviceAddress: String)->Unit) {
+fun HomeScreen(
+    viewModel: HomeViewModel = hiltViewModel(),
+    onNavigate: (deviceAddress: String) -> Unit
+) {
     val state by viewModel.state.collectAsState()
     Column(Modifier.fillMaxSize()) {
-
         LazyColumn(
             Modifier
                 .fillMaxWidth()
                 .weight(1f), content = {
-            itemsIndexed(state.scannedDevices) { index, device ->
-                Text(text = device.address ?: "null",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            onNavigate(device.address)
-                        }
-                        .padding(16.dp))
-            }
-        })
+                itemsIndexed(state.scannedDevices) { index, device ->
+                    BluetoothDeviceItem(item = device, onClick = {
+                        onNavigate(device.address)
+                    })
+                    Divider()
+                }
+            })
         Row(Modifier.fillMaxWidth()) {
             Button(onClick = { viewModel.startScan() }) {
                 Text(text = "Start Scan")
@@ -47,5 +50,31 @@ fun HomeScreen (viewModel: HomeViewModel = hiltViewModel(), onNavigate: (deviceA
             }
         }
     }
+}
 
+@SuppressLint("MissingPermission")
+@Composable
+fun BluetoothDeviceItem(item: BluetoothDevice, onClick: () -> Unit) {
+    Surface(
+        Modifier
+            .fillMaxWidth()
+            .clickable {
+                onClick()
+            }
+    ) {
+        Column {
+            Text(text = "Address : ${item.address ?: ""}")
+            Text(text = "Name : ${item.name ?: ""}")
+            Text(
+                text = "Bond State : ${
+                    when (item.bondState) {
+                        BluetoothDevice.BOND_BONDED -> "Paired"
+                        BluetoothDevice.BOND_BONDING -> "Pairing"
+                        BluetoothDevice.BOND_NONE -> "Not Paired"
+                        else -> {""}
+                    }
+                }"
+            )
+        }
+    }
 }
